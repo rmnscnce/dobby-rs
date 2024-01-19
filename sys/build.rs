@@ -17,6 +17,8 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         .pipe(|builder| {
             if let Ok(ndk_sysroot_path) = env::var("NDK_SYSROOT_PATH") {
                 builder.clang_arg(format!("--sysroot={}", ndk_sysroot_path))
+            } else if let Ok(cargo_ndk_sysroot_path) = env::var("CARGO_NDK_SYSROOT_PATH") {
+                builder.clang_arg(format!("--sysroot={}", cargo_ndk_sysroot_path))
             } else if let Ok(sysroot_path) = env::var("SYSROOT") {
                 builder.clang_arg(format!("--sysroot={}", sysroot_path))
             } else {
