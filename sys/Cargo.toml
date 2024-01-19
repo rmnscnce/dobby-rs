@@ -1,0 +1,15 @@
+[package]
+name = "dobby-sys"
+version = "0.0.0"
+edition = "2021"
+
+[features]
+default = []
+static = []
+
+[dependencies]
+
+[build-dependencies]
+tap = { version = "1.0" }
+cfg-if = { version = "1.0" }
+bindgen = { version = "0.69" }
