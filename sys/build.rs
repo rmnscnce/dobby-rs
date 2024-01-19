@@ -6,9 +6,7 @@ use tap::Pipe as _;
 fn main() -> Result<(), Box<dyn error::Error>> {
     cfg_if! {
         if #[cfg(feature = "static")] {
-            println!("cargo:rustc-link-lib=static=dobby");
-        } else {
-            println!("cargo:rustc-link-lib=dylib=dobby");
+            println!("cargo:warning='static' is a deprecated feature which has no effect. Please directly link against the library in your crate");
         }
     }
 
