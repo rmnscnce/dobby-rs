@@ -1,6 +1,6 @@
 [package]
 name = "dobby"
-description = "Safe bindings for the Dobby inline hooking library"
+description = "Bindings for the Dobby inline hooking library"
 authors = ["Paskal Sitepu <rmnscnce@ya.ru>"]
 license = "Apache-2.0"
 version = "0.0.0"
@@ -10,7 +10,7 @@ edition = "2021"
 static = ["dobby-sys/static"]
 
 [dependencies]
-dobby-sys = { path = "sys" }
+dobby-sys = { path = "sys", version = "0.0" }
 thiserror = { version = "1.0" }
 
 [workspace]
