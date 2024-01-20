@@ -3,7 +3,7 @@ name = "dobby"
 description = "Bindings for the Dobby inline hooking library"
 authors = ["Paskal Sitepu <rmnscnce@ya.ru>"]
 license = "Apache-2.0"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2021"
 
 [features]
