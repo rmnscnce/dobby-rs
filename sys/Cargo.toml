@@ -1,0 +1,24 @@
+[package]
+name = "dobbyhook-sys"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["near-branch", "plugin-symbol-resolver"]
+debug = []
+near-branch = []
+full-floating-point-register-pack = []
+plugin-symbol-resolver = []
+plugin-import-table-replace = []
+plugin-android-bionic-linker-util = []
+build-kernel-mode = []
+private-obfuscation = []
+
+[dependencies]
+
+[build-dependencies]
+tap = { version = "1.0" }
+cfg-if = { version = "1.0" }
+color-eyre = { version = "0.6" }
+cmake = { version = "0.1" }
+bindgen = { version = "0.70" }
