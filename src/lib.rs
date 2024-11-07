@@ -1,6 +1,7 @@
 pub use dobbyhook_sys as ffi;
 use std::{
     ffi::CString,
+    mem,
     ptr::{self, NonNull},
 };
 
@@ -10,14 +11,18 @@ pub use errors::*;
 /// Resolve the address of the specified symbol in the specified image.
 /// Returns [`None`] if the symbol could not be found or if the image
 /// has not been loaded yet
-pub fn symbol_resolver<S>(image: Option<S>, symbol: S) -> Option<*mut ()>
+pub fn symbol_resolver<S, F>(image: Option<S>, symbol: S) -> Option<NonNull<F>>
 where
     S: AsRef<str>,
+    F: Sized,
 {
     _symbol_resolver(image.as_ref().map(AsRef::as_ref), symbol.as_ref())
 }
 
-fn _symbol_resolver(image: Option<&str>, symbol: &str) -> Option<*mut ()> {
+fn _symbol_resolver<F>(image: Option<&str>, symbol: &str) -> Option<NonNull<F>>
+where
+    F: Sized,
+{
     let image = image.map(|image| CString::new(image).unwrap());
     let symbol = CString::new(symbol).unwrap();
 
@@ -31,10 +36,10 @@ fn _symbol_resolver(image: Option<&str>, symbol: &str) -> Option<*mut ()> {
         )
     };
 
-    if symbol_address.is_null() {
+    if symbol_address.is_null() || symbol_address.align_offset(mem::align_of::<F>()) != 0 {
         None
     } else {
-        Some(symbol_address as *mut _)
+        Some(unsafe { NonNull::new_unchecked(symbol_address.cast()) })
     }
 }
 
@@ -73,10 +78,13 @@ unsafe fn _patch_code(address: NonNull<()>, buffer: &[u8]) -> Result<(), HookErr
 /// # Safety
 /// This function is inherently unsafe due to its nature, and may unexpectedly
 /// crash the process if used incorrectly
-pub unsafe fn hook<T>(
-    target: NonNull<T>,
-    replacement: NonNull<T>,
-) -> Result<Option<NonNull<T>>, HookError> {
+pub unsafe fn hook<F>(
+    target: NonNull<F>,
+    replacement: NonNull<F>,
+) -> Result<Option<NonNull<F>>, HookError>
+where
+    F: Sized,
+{
     let mut origin = ptr::null_mut();
     match ffi::DobbyHook(
         target.as_ptr().cast(),
@@ -84,11 +92,13 @@ pub unsafe fn hook<T>(
         &mut origin,
     ) {
         -1 => Err(HookError::FailedToHook),
-        _ => Ok(if origin.is_null() {
-            None
-        } else {
-            Some(NonNull::new_unchecked(origin.cast()))
-        }),
+        _ => Ok(
+            if origin.is_null() || origin.align_offset(mem::align_of::<F>()) != 0 {
+                None
+            } else {
+                Some(NonNull::new_unchecked(origin.cast()))
+            },
+        ),
     }
 }
 
@@ -97,7 +107,14 @@ pub unsafe fn hook<T>(
 /// # Safety
 /// This function is inherently unsafe due to its nature, and may unexpectedly
 /// crash the process if used incorrectly
-pub unsafe fn unhook<T>(target: NonNull<T>) -> Result<(), HookError> {
+pub unsafe fn unhook<F>(target: NonNull<F>) -> Result<(), HookError>
+where
+    F: Sized,
+{
+    if target.align_offset(mem::align_of::<F>()) != 0 {
+        return Err(HookError::FailedToUndoHook);
+    }
+
     match ffi::DobbyDestroy(target.as_ptr().cast()) {
         -1 => Err(HookError::FailedToUndoHook),
         _ => Ok(()),
