@@ -1,5 +1,8 @@
 pub use dobbyhook_sys as ffi;
-use std::{ffi::CString, ptr};
+use std::{
+    ffi::CString,
+    ptr::{self, NonNull},
+};
 
 mod errors;
 pub use errors::*;
@@ -41,18 +44,18 @@ fn _symbol_resolver(image: Option<&str>, symbol: &str) -> Option<*mut ()> {
 /// # Safety
 /// This function is inherently unsafe due to its nature, and may unexpectedly
 /// crash the process if used incorrectly
-pub unsafe fn patch_code<B>(address: *mut (), buffer: B) -> Result<(), HookError>
+pub unsafe fn patch_code<B>(address: NonNull<()>, buffer: B) -> Result<(), HookError>
 where
     B: AsRef<[u8]>,
 {
     _patch_code(address, buffer.as_ref())
 }
 
-unsafe fn _patch_code(address: *mut (), buffer: &[u8]) -> Result<(), HookError> {
+unsafe fn _patch_code(address: NonNull<()>, buffer: &[u8]) -> Result<(), HookError> {
     let buffer_size = buffer.len();
 
     match ffi::DobbyCodePatch(
-        address as *mut _,
+        address.as_ptr().cast(),
         buffer.as_ptr().cast_mut(),
         buffer_size.try_into().unwrap(),
     ) {
@@ -70,14 +73,21 @@ unsafe fn _patch_code(address: *mut (), buffer: &[u8]) -> Result<(), HookError> 
 /// # Safety
 /// This function is inherently unsafe due to its nature, and may unexpectedly
 /// crash the process if used incorrectly
-pub unsafe fn hook(target: *mut (), replacement: *mut ()) -> Result<Option<*mut ()>, HookError> {
+pub unsafe fn hook<T>(
+    target: NonNull<T>,
+    replacement: NonNull<T>,
+) -> Result<Option<NonNull<T>>, HookError> {
     let mut origin = ptr::null_mut();
-    match ffi::DobbyHook(target as *mut _, replacement as *mut _, &mut origin) {
+    match ffi::DobbyHook(
+        target.as_ptr().cast(),
+        replacement.as_ptr().cast(),
+        &mut origin,
+    ) {
         -1 => Err(HookError::FailedToHook),
         _ => Ok(if origin.is_null() {
             None
         } else {
-            Some(origin as *mut _)
+            Some(NonNull::new_unchecked(origin.cast()))
         }),
     }
 }
@@ -87,8 +97,8 @@ pub unsafe fn hook(target: *mut (), replacement: *mut ()) -> Result<Option<*mut 
 /// # Safety
 /// This function is inherently unsafe due to its nature, and may unexpectedly
 /// crash the process if used incorrectly
-pub unsafe fn unhook(target: *mut ()) -> Result<(), HookError> {
-    match ffi::DobbyDestroy(target as *mut _) {
+pub unsafe fn unhook<T>(target: NonNull<T>) -> Result<(), HookError> {
+    match ffi::DobbyDestroy(target.as_ptr().cast()) {
         -1 => Err(HookError::FailedToUndoHook),
         _ => Ok(()),
     }
