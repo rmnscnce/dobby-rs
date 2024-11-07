@@ -92,8 +92,8 @@ pub fn main() -> color_eyre::Result<()> {
     let dest = Config::new("external/Dobby")
         .pipe_borrow_mut(cmake_config_setup)
         .build();
-    println!("cargo:rustc-link-search=native={}/lib", dest.display());
-    println!("cargo:rustc-link-lib=static=dobby_static");
+    println!("cargo:rustc-link-search=native={}/build", dest.display());
+    println!("cargo:rustc-link-lib=static=dobby");
 
     let dest = bindgen::Builder::default()
         .header("external/Dobby/include/dobby.h")
