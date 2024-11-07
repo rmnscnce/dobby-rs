@@ -1,6 +1,6 @@
 [package]
 name = "dobbyhook"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [features]
@@ -16,7 +16,7 @@ private-obfuscation = ["dobbyhook-sys/private-obfuscation"]
 
 [dependencies]
 dobbyhook-sys = { path = "sys" }
-thiserror = { version = "1.0" }
+thiserror = { version = "2.0" }
 
 [workspace]
 members = ["sys"]

@@ -6,6 +6,12 @@ use tap::Pipe;
 
 fn cmake_config_setup(cfg: &mut Config) -> &mut Config {
     cfg.always_configure(true);
+
+    // For Android
+    if let Ok(var) = env::var("CMAKE_ANDROID_NDK") {
+        cfg.define("CMAKE_ANDROID_NDK", var);
+    }
+
     cfg.define("CMAKE_C_COMPILER", "clang");
     cfg.define("CMAKE_CXX_COMPILER", "clang++");
     cfg.define("CMAKE_ASM_COMPILER", "clang");
@@ -83,11 +89,15 @@ fn cmake_config_setup(cfg: &mut Config) -> &mut Config {
 pub fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
-    let dest = Config::new("external/Dobby").pipe_borrow_mut(cmake_config_setup).build();
+    let dest = Config::new("external/Dobby")
+        .pipe_borrow_mut(cmake_config_setup)
+        .build();
     println!("cargo:rustc-link-search=native={}/lib", dest.display());
     println!("cargo:rustc-link-lib=static=dobby");
 
-    let dest = bindgen::Builder::default().header("external/Dobby/include/dobby.h").generate()?;
+    let dest = bindgen::Builder::default()
+        .header("external/Dobby/include/dobby.h")
+        .generate()?;
     dest.write_to_file(PathBuf::from(env::var("OUT_DIR")?).join("dobby.h.rs"))?;
 
     Ok(())
