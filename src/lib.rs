@@ -20,7 +20,7 @@ impl<F> AssertSize<F> {
 /// Resolve the address of the specified symbol in the specified image.
 /// Returns [`None`] if the symbol could not be found or if the image
 /// has not been loaded yet
-pub fn symbol_resolver<S, F>(image: Option<S>, symbol: S) -> Option<NonNull<F>>
+pub fn symbol_resolver<S, F>(image: Option<S>, symbol: S) -> Option<F>
 where
     S: AsRef<str>,
     F: Sized,
