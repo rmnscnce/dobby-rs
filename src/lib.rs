@@ -1,6 +1,7 @@
 pub use dobbyhook_sys as ffi;
 use std::{
     ffi::CString,
+    marker::PhantomData,
     mem,
     os::raw::c_void,
     ptr::{self, NonNull},
@@ -8,6 +9,13 @@ use std::{
 
 mod errors;
 pub use errors::*;
+
+struct AssertSize<F>(PhantomData<F>);
+impl<F> AssertSize<F> {
+    const ASSERT: () = if mem::size_of::<F>() != mem::size_of::<*mut c_void>() {
+        panic!("Size mismatch, must not be a valid function pointer");
+    };
+}
 
 /// Resolve the address of the specified symbol in the specified image.
 /// Returns [`None`] if the symbol could not be found or if the image
@@ -20,10 +28,13 @@ where
     _symbol_resolver(image.as_ref().map(AsRef::as_ref), symbol.as_ref())
 }
 
-fn _symbol_resolver<F>(image: Option<&str>, symbol: &str) -> Option<NonNull<F>>
+fn _symbol_resolver<F>(image: Option<&str>, symbol: &str) -> Option<F>
 where
     F: Sized,
 {
+    #[allow(clippy::let_unit_value)]
+    let _ = AssertSize::<F>::ASSERT;
+
     let image = image.map(|image| CString::new(image).unwrap());
     let symbol = CString::new(symbol).unwrap();
 
@@ -40,7 +51,7 @@ where
     if symbol_address.is_null() || symbol_address.align_offset(mem::align_of::<F>()) != 0 {
         None
     } else {
-        Some(unsafe { NonNull::new_unchecked(mem::transmute::<*mut _, *mut F>(symbol_address)) })
+        Some(unsafe { mem::transmute_copy::<_, F>(&symbol_address) })
     }
 }
 
@@ -79,17 +90,17 @@ unsafe fn _patch_code(address: NonNull<()>, buffer: &[u8]) -> Result<(), HookErr
 /// # Safety
 /// This function is inherently unsafe due to its nature, and may unexpectedly
 /// crash the process if used incorrectly
-pub unsafe fn hook<F>(
-    target: NonNull<F>,
-    replacement: NonNull<F>,
-) -> Result<Option<NonNull<F>>, HookError>
+pub unsafe fn hook<F>(target: F, replacement: F) -> Result<Option<F>, HookError>
 where
     F: Sized,
 {
+    #[allow(clippy::let_unit_value)]
+    let _ = AssertSize::<F>::ASSERT;
+
     let mut origin = ptr::null_mut();
     match ffi::DobbyHook(
-        target.as_ptr().cast(),
-        replacement.as_ptr().cast(),
+        mem::transmute_copy::<_, *mut c_void>(&target),
+        mem::transmute_copy::<_, *mut c_void>(&replacement),
         &mut origin,
     ) {
         -1 => Err(HookError::FailedToHook),
@@ -97,9 +108,7 @@ where
             if origin.is_null() || origin.align_offset(mem::align_of::<F>()) != 0 {
                 None
             } else {
-                Some(NonNull::new_unchecked(mem::transmute::<*mut _, *mut F>(
-                    origin,
-                )))
+                Some(mem::transmute_copy::<_, F>(&origin))
             },
         ),
     }
@@ -110,15 +119,14 @@ where
 /// # Safety
 /// This function is inherently unsafe due to its nature, and may unexpectedly
 /// crash the process if used incorrectly
-pub unsafe fn unhook<F>(target: NonNull<F>) -> Result<(), HookError>
+pub unsafe fn unhook<F>(target: F) -> Result<(), HookError>
 where
     F: Sized,
 {
-    if target.align_offset(mem::align_of::<F>()) != 0 {
-        return Err(HookError::FailedToUndoHook);
-    }
+    #[allow(clippy::let_unit_value)]
+    let _ = AssertSize::<F>::ASSERT;
 
-    match ffi::DobbyDestroy(mem::transmute::<*mut _, *mut c_void>(target.as_ptr())) {
+    match ffi::DobbyDestroy(mem::transmute_copy::<_, *mut c_void>(&target)) {
         -1 => Err(HookError::FailedToUndoHook),
         _ => Ok(()),
     }
