@@ -2,6 +2,7 @@ pub use dobbyhook_sys as ffi;
 use std::{
     ffi::CString,
     mem,
+    os::raw::c_void,
     ptr::{self, NonNull},
 };
 
@@ -39,7 +40,7 @@ where
     if symbol_address.is_null() || symbol_address.align_offset(mem::align_of::<F>()) != 0 {
         None
     } else {
-        Some(unsafe { NonNull::new_unchecked(symbol_address.cast()) })
+        Some(unsafe { NonNull::new_unchecked(mem::transmute::<*mut _, *mut F>(symbol_address)) })
     }
 }
 
@@ -96,7 +97,9 @@ where
             if origin.is_null() || origin.align_offset(mem::align_of::<F>()) != 0 {
                 None
             } else {
-                Some(NonNull::new_unchecked(origin.cast()))
+                Some(NonNull::new_unchecked(mem::transmute::<*mut _, *mut F>(
+                    origin,
+                )))
             },
         ),
     }
@@ -115,7 +118,7 @@ where
         return Err(HookError::FailedToUndoHook);
     }
 
-    match ffi::DobbyDestroy(target.as_ptr().cast()) {
+    match ffi::DobbyDestroy(mem::transmute::<*mut _, *mut c_void>(target.as_ptr())) {
         -1 => Err(HookError::FailedToUndoHook),
         _ => Ok(()),
     }
