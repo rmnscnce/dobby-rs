@@ -13,7 +13,9 @@ fn cmake_config_setup(cfg: &mut Config) -> &mut Config {
     }
 
     cfg.define("CMAKE_C_COMPILER", "clang");
+    cfg.define("CMAKE_C_FLAGS", "-fuse-ld=lld");
     cfg.define("CMAKE_CXX_COMPILER", "clang++");
+    cfg.define("CMAKE_CXX_FLAGS", "-fuse-ld=lld");
     cfg.define("CMAKE_ASM_COMPILER", "clang");
     cfg.build_target("dobby_static");
     cfg.define("DOBBY_GENERATE_SHARED", "OFF");
@@ -94,6 +96,8 @@ pub fn main() -> color_eyre::Result<()> {
         .build();
     println!("cargo:rustc-link-search=native={}/build", dest.display());
     println!("cargo:rustc-link-lib=static=dobby");
+    #[cfg(not(target_os = "android"))]
+    println!("cargo:rustc-link-lib=dylib=stdc++");
 
     let dest = bindgen::Builder::default()
         .header("external/Dobby/include/dobby.h")

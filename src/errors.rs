@@ -14,4 +14,6 @@ pub enum HookError {
     MemoryOperationErrorNotEnough,
     #[error("Memory error happend, error type: MemoryOperationErrorNone")]
     MemoryOperationErrorNone,
+    #[error("Unknown error occured ({0})")]
+    Unknown(i32),
 }

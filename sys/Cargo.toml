@@ -1,7 +1,7 @@
 [package]
 name = "dobbyhook-sys"
 version = "0.1.1"
-edition = "2021"
+edition = "2024"
 
 [features]
 default = ["near-branch", "plugin-symbol-resolver"]
@@ -21,4 +21,4 @@ tap = { version = "1.0" }
 cfg-if = { version = "1.0" }
 color-eyre = { version = "0.6" }
 cmake = { version = "0.1" }
-bindgen = { version = "0.70" }
+bindgen = { version = "0.72" }

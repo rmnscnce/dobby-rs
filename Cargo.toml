@@ -1,16 +1,20 @@
 [package]
 name = "dobbyhook"
-version = "0.4.1"
-edition = "2021"
+version = "0.5.0"
+edition = "2024"
 
 [features]
 default = ["near-branch", "plugin-symbol-resolver"]
 debug = ["dobbyhook-sys/debug"]
 near-branch = ["dobbyhook-sys/near-branch"]
-full-floating-point-register-pack = ["dobbyhook-sys/full-floating-point-register-pack"]
+full-floating-point-register-pack = [
+    "dobbyhook-sys/full-floating-point-register-pack",
+]
 plugin-symbol-resolver = ["dobbyhook-sys/plugin-symbol-resolver"]
 plugin-import-table-replace = ["dobbyhook-sys/plugin-import-table-replace"]
-plugin-android-bionic-linker-util = ["dobbyhook-sys/plugin-android-bionic-linker-util"]
+plugin-android-bionic-linker-util = [
+    "dobbyhook-sys/plugin-android-bionic-linker-util",
+]
 build-kernel-mode = ["dobbyhook-sys/build-kernel-mode"]
 private-obfuscation = ["dobbyhook-sys/private-obfuscation"]
 
